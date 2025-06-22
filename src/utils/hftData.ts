@@ -11,6 +11,8 @@ export interface MarketData {
   spread: number;
   change: number;
   changePercent: number;
+  marketCap?: number;
+  volatility: number;
 }
 
 export interface OrderBookEntry {
@@ -27,6 +29,8 @@ export interface PredictionSignal {
   targetPrice: number;
   timeframe: number; // seconds
   reasoning: string;
+  riskLevel: 'low' | 'medium' | 'high';
+  expectedReturn: number;
 }
 
 export interface Strategy {
@@ -37,114 +41,171 @@ export interface Strategy {
   accuracy: number;
   sharpeRatio: number;
   active: boolean;
+  riskLevel: 'low' | 'medium' | 'high';
+  winRate: number;
 }
 
-// Market data simulation
+export interface MarketSentiment {
+  symbol: string;
+  sentiment: 'bullish' | 'bearish' | 'neutral';
+  score: number; // -100 to 100
+  volume24h: number;
+  socialMentions: number;
+}
+
+// Extended market data with crypto and traditional assets
+export const marketAssets = {
+  // Traditional Stocks
+  'AAPL': { basePrice: 185.50, type: 'stock', sector: 'Technology' },
+  'GOOGL': { basePrice: 142.30, type: 'stock', sector: 'Technology' },
+  'TSLA': { basePrice: 248.75, type: 'stock', sector: 'Automotive' },
+  'MSFT': { basePrice: 378.25, type: 'stock', sector: 'Technology' },
+  'NVDA': { basePrice: 465.80, type: 'stock', sector: 'Technology' },
+  'SPY': { basePrice: 445.20, type: 'etf', sector: 'Index' },
+  
+  // Major Cryptocurrencies
+  'BTC/USD': { basePrice: 67500, type: 'crypto', sector: 'Cryptocurrency' },
+  'ETH/USD': { basePrice: 3450, type: 'crypto', sector: 'Cryptocurrency' },
+  'SOL/USD': { basePrice: 145.80, type: 'crypto', sector: 'Cryptocurrency' },
+  'ADA/USD': { basePrice: 0.45, type: 'crypto', sector: 'Cryptocurrency' },
+  'DOT/USD': { basePrice: 6.85, type: 'crypto', sector: 'Cryptocurrency' },
+  'MATIC/USD': { basePrice: 0.92, type: 'crypto', sector: 'Cryptocurrency' },
+  
+  // Forex Pairs
+  'EUR/USD': { basePrice: 1.0845, type: 'forex', sector: 'Currency' },
+  'GBP/USD': { basePrice: 1.2675, type: 'forex', sector: 'Currency' },
+  'USD/JPY': { basePrice: 149.85, type: 'forex', sector: 'Currency' },
+  
+  // Commodities
+  'GOLD': { basePrice: 2025.50, type: 'commodity', sector: 'Precious Metals' },
+  'SILVER': { basePrice: 24.85, type: 'commodity', sector: 'Precious Metals' },
+  'OIL': { basePrice: 78.90, type: 'commodity', sector: 'Energy' }
+};
+
+// Market data simulation with enhanced features
 export const generateMarketData = (symbol: string, basePrice: number): MarketData => {
-  const volatility = 0.002; // 0.2% volatility
-  const priceChange = (Math.random() - 0.5) * 2 * volatility * basePrice;
+  const asset = marketAssets[symbol as keyof typeof marketAssets];
+  const volatilityMultiplier = asset?.type === 'crypto' ? 0.004 : 
+                               asset?.type === 'forex' ? 0.0008 : 0.002;
+  
+  const priceChange = (Math.random() - 0.5) * 2 * volatilityMultiplier * basePrice;
   const newPrice = basePrice + priceChange;
-  const spread = newPrice * 0.0001; // 0.01% spread
+  const spread = newPrice * (asset?.type === 'crypto' ? 0.0005 : 0.0001);
   
   return {
     symbol,
     price: newPrice,
-    volume: Math.floor(Math.random() * 10000) + 1000,
+    volume: Math.floor(Math.random() * (asset?.type === 'crypto' ? 50000 : 10000)) + 1000,
     timestamp: Date.now(),
     bid: newPrice - spread / 2,
     ask: newPrice + spread / 2,
     spread: spread,
     change: priceChange,
-    changePercent: (priceChange / basePrice) * 100
+    changePercent: (priceChange / basePrice) * 100,
+    marketCap: asset?.type === 'crypto' ? Math.floor(newPrice * (Math.random() * 1000000000 + 500000000)) : undefined,
+    volatility: Math.abs(priceChange / basePrice) * 100
   };
 };
 
-// Generate order book data
-export const generateOrderBook = (basePrice: number): OrderBookEntry[] => {
-  const orderBook: OrderBookEntry[] = [];
-  const spread = basePrice * 0.0001;
-  
-  // Generate bid side (below market price)
-  for (let i = 0; i < 10; i++) {
-    orderBook.push({
-      price: basePrice - spread / 2 - (i * spread * 0.1),
-      size: Math.floor(Math.random() * 1000) + 100,
-      side: 'bid'
-    });
-  }
-  
-  // Generate ask side (above market price)
-  for (let i = 0; i < 10; i++) {
-    orderBook.push({
-      price: basePrice + spread / 2 + (i * spread * 0.1),
-      size: Math.floor(Math.random() * 1000) + 100,
-      side: 'ask'
-    });
-  }
-  
-  return orderBook;
-};
-
-// AI prediction strategies
+// Enhanced AI prediction strategies
 export const strategies: Strategy[] = [
   {
     id: 'momentum_scalper',
     name: 'Momentum Scalper',
-    description: 'Ultra-short term momentum detection using tick data',
+    description: 'Ultra-short term momentum detection using tick data and volume analysis',
     performance: 12.4,
     accuracy: 67.3,
     sharpeRatio: 2.1,
-    active: true
+    active: true,
+    riskLevel: 'high',
+    winRate: 72.5
   },
   {
     id: 'mean_reversion',
     name: 'Mean Reversion ML',
-    description: 'Machine learning based mean reversion with microstructure',
+    description: 'Machine learning based mean reversion with microstructure patterns',
     performance: 8.7,
     accuracy: 72.1,
     sharpeRatio: 1.8,
-    active: true
+    active: true,
+    riskLevel: 'medium',
+    winRate: 68.9
   },
   {
     id: 'orderbook_imbalance',
-    name: 'Order Book Imbalance',
-    description: 'Deep learning model analyzing order flow imbalances',
+    name: 'Order Flow Imbalance',
+    description: 'Deep learning model analyzing order flow imbalances and liquidity',
     performance: 15.2,
     accuracy: 64.8,
     sharpeRatio: 2.4,
-    active: true
+    active: true,
+    riskLevel: 'high',
+    winRate: 65.2
+  },
+  {
+    id: 'crypto_sentiment',
+    name: 'Crypto Sentiment AI',
+    description: 'Social media and news sentiment analysis for cryptocurrency markets',
+    performance: 18.6,
+    accuracy: 69.4,
+    sharpeRatio: 2.8,
+    active: true,
+    riskLevel: 'medium',
+    winRate: 74.1
+  },
+  {
+    id: 'cross_asset_arbitrage',
+    name: 'Cross-Asset Arbitrage',
+    description: 'Multi-market arbitrage opportunities across stocks, crypto, and forex',
+    performance: 11.3,
+    accuracy: 85.7,
+    sharpeRatio: 3.2,
+    active: true,
+    riskLevel: 'low',
+    winRate: 89.3
   },
   {
     id: 'latency_arbitrage',
     name: 'Latency Arbitrage',
-    description: 'Cross-venue latency arbitrage detection',
+    description: 'Cross-venue latency arbitrage detection with microsecond precision',
     performance: 6.3,
     accuracy: 89.2,
     sharpeRatio: 3.1,
-    active: false
+    active: false,
+    riskLevel: 'low',
+    winRate: 91.8
   }
 ];
 
-// Generate AI predictions
+// Generate enhanced AI predictions
 export const generatePrediction = (marketData: MarketData, strategy: Strategy): PredictionSignal => {
-  const confidence = Math.random() * 0.4 + 0.6; // 60-100% confidence
+  const confidence = Math.random() * 0.35 + 0.65; // 65-100% confidence
   const signals = ['buy', 'sell', 'hold'] as const;
   const signal = signals[Math.floor(Math.random() * signals.length)];
   
   let targetPrice = marketData.price;
   let reasoning = '';
+  let expectedReturn = 0;
+  
+  const asset = marketAssets[marketData.symbol as keyof typeof marketAssets];
+  const returnMultiplier = asset?.type === 'crypto' ? 0.002 : 0.001;
   
   switch (signal) {
     case 'buy':
-      targetPrice = marketData.price * (1 + Math.random() * 0.001 + 0.0005);
-      reasoning = `${strategy.name} detected bullish momentum. Order flow shows buying pressure.`;
+      const upwardMove = Math.random() * 0.002 + 0.0008;
+      targetPrice = marketData.price * (1 + upwardMove);
+      expectedReturn = upwardMove * 100;
+      reasoning = `${strategy.name} detected ${asset?.type === 'crypto' ? 'strong bullish momentum in crypto markets' : 'buying pressure in order flow'}. ${strategy.riskLevel === 'high' ? 'High volatility expected.' : 'Stable upward movement predicted.'}`;
       break;
     case 'sell':
-      targetPrice = marketData.price * (1 - Math.random() * 0.001 - 0.0005);
-      reasoning = `${strategy.name} identified selling opportunity. Market microstructure indicates downward pressure.`;
+      const downwardMove = Math.random() * 0.002 + 0.0008;
+      targetPrice = marketData.price * (1 - downwardMove);
+      expectedReturn = downwardMove * 100;
+      reasoning = `${strategy.name} identified ${asset?.type === 'crypto' ? 'bearish sentiment in crypto space' : 'selling pressure in microstructure'}. ${confidence > 0.8 ? 'High confidence signal.' : 'Moderate strength signal.'}`;
       break;
     case 'hold':
-      reasoning = `${strategy.name} suggests neutral position. Market conditions unclear.`;
+      expectedReturn = 0;
+      reasoning = `${strategy.name} suggests neutral position. Market conditions show ${asset?.type === 'forex' ? 'currency pair consolidation' : 'sideways movement expected'}.`;
       break;
   }
   
@@ -154,25 +215,45 @@ export const generatePrediction = (marketData: MarketData, strategy: Strategy): 
     signal,
     confidence,
     targetPrice,
-    timeframe: Math.floor(Math.random() * 30) + 15, // 15-45 seconds
-    reasoning
+    timeframe: Math.floor(Math.random() * 45) + 15, // 15-60 seconds
+    reasoning,
+    riskLevel: strategy.riskLevel,
+    expectedReturn
   };
 };
 
-// Price history for charts
+// Generate market sentiment data
+export const generateMarketSentiment = (symbol: string): MarketSentiment => {
+  const asset = marketAssets[symbol as keyof typeof marketAssets];
+  const sentiments = ['bullish', 'bearish', 'neutral'] as const;
+  const sentiment = sentiments[Math.floor(Math.random() * sentiments.length)];
+  
+  return {
+    symbol,
+    sentiment,
+    score: (Math.random() - 0.5) * 200, // -100 to 100
+    volume24h: Math.floor(Math.random() * 1000000000) + 100000000,
+    socialMentions: asset?.type === 'crypto' ? Math.floor(Math.random() * 10000) + 1000 : Math.floor(Math.random() * 1000) + 100
+  };
+};
+
+// Price history for charts with enhanced data
 export const generatePriceHistory = (basePrice: number, points: number) => {
   const history = [];
   let currentPrice = basePrice;
   
   for (let i = 0; i < points; i++) {
-    const volatility = 0.001;
+    const volatility = 0.0015;
     const change = (Math.random() - 0.5) * 2 * volatility * currentPrice;
     currentPrice += change;
     
     history.push({
       time: Date.now() - (points - i) * 1000,
       price: currentPrice,
-      volume: Math.floor(Math.random() * 5000) + 1000
+      volume: Math.floor(Math.random() * 8000) + 1000,
+      high: currentPrice * (1 + Math.random() * 0.001),
+      low: currentPrice * (1 - Math.random() * 0.001),
+      close: currentPrice
     });
   }
   
