@@ -1,8 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Activity, TrendingUp, Zap, Wifi, Database, Clock } from 'lucide-react';
+import NotificationSystem from './NotificationSystem';
 
 const TradingHeader = () => {
+  // ... keep existing code (state and useEffect hooks)
   const [currentTime, setCurrentTime] = useState(new Date());
   const [latency, setLatency] = useState(0.23);
   const [dataPoints, setDataPoints] = useState(0);
@@ -112,6 +113,9 @@ const TradingHeader = () => {
                 <span className="text-trading-cyan font-medium">Connected</span>
               </div>
             </div>
+
+            {/* Notification System */}
+            <NotificationSystem />
           </div>
         </div>
       </div>
@@ -135,6 +139,11 @@ const TradingHeader = () => {
             <div className="flex items-center space-x-2">
               <span className="text-trading-muted">Active Positions:</span>
               <span className="font-mono text-trading-text">7</span>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <span className="text-trading-muted">Success Rate:</span>
+              <span className="font-mono text-trading-purple">94.2%</span>
             </div>
           </div>
           
