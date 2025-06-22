@@ -1,6 +1,10 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Import JetBrains Mono font */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
 
@@ -98,6 +102,34 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-trading-bg text-trading-text font-mono;
+  }
+}
+
+@layer utilities {
+  .glow-green {
+    box-shadow: 0 0 20px rgba(0, 212, 170, 0.3);
+  }
+  
+  .glow-red {
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+  }
+  
+  .glow-blue {
+    box-shadow: 0 0 20px rgba(77, 171, 247, 0.3);
+  }
+  
+  .text-gradient-green {
+    background: linear-gradient(135deg, #00d4aa, #4ade80);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .text-gradient-purple {
+    background: linear-gradient(135deg, #9775fa, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
