@@ -4,7 +4,6 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useToast } from './ui/use-toast';
 import { validateTradeInput, validateTradingAmount, validateSymbol, sanitizeInput, apiRateLimit } from '../utils/security';
-import { useFormField, FormItem, FormLabel, FormControl, FormMessage } from './ui/form';
 import { Shield, AlertTriangle } from 'lucide-react';
 
 interface SecureTradingFormProps {
@@ -122,40 +121,46 @@ const SecureTradingForm: React.FC<SecureTradingFormProps> = ({ onSubmit }) => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <FormItem>
-          <FormLabel>Trading Symbol</FormLabel>
-          <FormControl>
-            <Input
-              type="text"
-              value={symbol}
-              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-              placeholder="BTC/USD"
-              className={`bg-trading-bg border-trading-border ${errors.symbol ? 'border-trading-red' : ''}`}
-              maxLength={10}
-              pattern="[A-Z/]+"
-              required
-            />
-          </FormControl>
-          {errors.symbol && <FormMessage>{errors.symbol}</FormMessage>}
-        </FormItem>
+        <div className="space-y-2">
+          <label htmlFor="symbol" className="block text-sm font-medium text-trading-text">
+            Trading Symbol
+          </label>
+          <Input
+            id="symbol"
+            type="text"
+            value={symbol}
+            onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+            placeholder="BTC/USD"
+            className={`bg-trading-bg border-trading-border ${errors.symbol ? 'border-trading-red' : ''}`}
+            maxLength={10}
+            pattern="[A-Z/]+"
+            required
+          />
+          {errors.symbol && (
+            <p className="text-sm font-medium text-trading-red">{errors.symbol}</p>
+          )}
+        </div>
 
-        <FormItem>
-          <FormLabel>Amount ($)</FormLabel>
-          <FormControl>
-            <Input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="1000"
-              className={`bg-trading-bg border-trading-border ${errors.amount ? 'border-trading-red' : ''}`}
-              min="0.01"
-              max="1000000"
-              step="0.01"
-              required
-            />
-          </FormControl>
-          {errors.amount && <FormMessage>{errors.amount}</FormMessage>}
-        </FormItem>
+        <div className="space-y-2">
+          <label htmlFor="amount" className="block text-sm font-medium text-trading-text">
+            Amount ($)
+          </label>
+          <Input
+            id="amount"
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="1000"
+            className={`bg-trading-bg border-trading-border ${errors.amount ? 'border-trading-red' : ''}`}
+            min="0.01"
+            max="1000000"
+            step="0.01"
+            required
+          />
+          {errors.amount && (
+            <p className="text-sm font-medium text-trading-red">{errors.amount}</p>
+          )}
+        </div>
 
         <div className="flex space-x-2">
           <Button
