@@ -9,13 +9,95 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      market_data: {
+        Row: {
+          change_amount: number | null
+          change_percent: number | null
+          data_source: string
+          id: string
+          last_updated: string
+          market_cap: number | null
+          price: number
+          symbol: string
+          volume: number | null
+        }
+        Insert: {
+          change_amount?: number | null
+          change_percent?: number | null
+          data_source: string
+          id?: string
+          last_updated?: string
+          market_cap?: number | null
+          price: number
+          symbol: string
+          volume?: number | null
+        }
+        Update: {
+          change_amount?: number | null
+          change_percent?: number | null
+          data_source?: string
+          id?: string
+          last_updated?: string
+          market_cap?: number | null
+          price?: number
+          symbol?: string
+          volume?: number | null
+        }
+        Relationships: []
+      }
+      market_news: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          published_at: string
+          sentiment: string | null
+          source: string
+          symbols: string[] | null
+          title: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          published_at: string
+          sentiment?: string | null
+          source: string
+          symbols?: string[] | null
+          title: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          published_at?: string
+          sentiment?: string | null
+          source?: string
+          symbols?: string[] | null
+          title?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      upsert_market_data: {
+        Args: {
+          p_symbol: string
+          p_price: number
+          p_change_amount: number
+          p_change_percent: number
+          p_volume: number
+          p_market_cap: number
+          p_data_source: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

@@ -1,11 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Minus, Activity, Zap, Filter, Search, Info, BarChart3 } from 'lucide-react';
-import { MarketData, generateMarketData, marketAssets } from '../utils/hftData';
+import { TrendingUp, TrendingDown, Minus, Activity, Zap, Filter, Search, Info, BarChart3, Wifi, WifiOff } from 'lucide-react';
+import { marketAssets } from '../utils/hftData';
 import { Input } from './ui/input';
 import DetailedStockView from './DetailedStockView';
+import { useRealTimeMarketData } from '../hooks/useRealTimeMarketData';
 
 const MarketOverview = () => {
-  const [marketData, setMarketData] = useState<MarketData[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedSector, setSelectedSector] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -15,17 +16,14 @@ const MarketOverview = () => {
   const getFilteredSymbols = () => {
     let entries = Object.entries(marketAssets);
     
-    // Filter by category (type)
     if (selectedCategory !== 'all') {
       entries = entries.filter(([_, asset]) => asset.type === selectedCategory);
     }
     
-    // Filter by sector
     if (selectedSector !== 'all') {
       entries = entries.filter(([_, asset]) => asset.sector === selectedSector);
     }
     
-    // Filter by search query
     if (searchQuery) {
       entries = entries.filter(([symbol, asset]) => 
         symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -33,38 +31,26 @@ const MarketOverview = () => {
       );
     }
     
-    return entries.slice(0, 20); // Show up to 20 symbols
+    return entries.slice(0, 20);
   };
 
-  // Get unique sectors
   const getSectors = () => {
     const sectors = Array.from(new Set(Object.values(marketAssets).map(asset => asset.sector)));
     return sectors.sort();
   };
 
-  useEffect(() => {
-    const symbols = getFilteredSymbols();
-    
-    // Initialize market data
-    const initialData = symbols.map(([symbol, asset]) => 
-      generateMarketData(symbol, asset.basePrice)
-    );
-    setMarketData(initialData);
+  // Get symbols for real-time data
+  const filteredSymbols = getFilteredSymbols().map(([symbol]) => symbol);
+  const { data: realTimeData, loading, error } = useRealTimeMarketData(filteredSymbols);
 
-    // Update data every 800ms for more realistic feel
-    const interval = setInterval(() => {
-      setMarketData(prevData => {
-        const currentSymbols = getFilteredSymbols();
-        return currentSymbols.map(([symbol, asset], index) => 
-          prevData[index] && prevData[index].symbol === symbol ? 
-            generateMarketData(symbol, prevData[index].price) : 
-            generateMarketData(symbol, asset.basePrice)
-        );
-      });
-    }, 800);
-
-    return () => clearInterval(interval);
-  }, [selectedCategory, selectedSector, searchQuery]);
+  // Create a map for quick lookup
+  const realTimeDataMap = React.useMemo(() => {
+    const map = new Map();
+    realTimeData.forEach(item => {
+      map.set(item.symbol, item);
+    });
+    return map;
+  }, [realTimeData]);
 
   const getTrendIcon = (change: number) => {
     if (change > 0) return <TrendingUp className="w-4 h-4 text-trading-green" />;
@@ -116,8 +102,20 @@ const MarketOverview = () => {
         <div>
           <h2 className="text-xl font-semibold text-trading-text mb-1">Market Overview</h2>
           <div className="text-sm text-trading-muted flex items-center space-x-2">
-            <div className="w-2 h-2 bg-trading-green rounded-full animate-pulse"></div>
-            <span>Real-time • Auto-refresh • {marketData.length} assets</span>
+            <div className="flex items-center space-x-1">
+              {loading ? (
+                <WifiOff className="w-3 h-3 text-trading-yellow animate-pulse" />
+              ) : error ? (
+                <WifiOff className="w-3 h-3 text-trading-red" />
+              ) : (
+                <Wifi className="w-3 h-3 text-trading-green" />
+              )}
+              <span>
+                {loading ? 'Fetching live data...' : 
+                 error ? 'Connection issue' : 
+                 'Live data'} • {filteredSymbols.length} assets
+              </span>
+            </div>
           </div>
         </div>
         
@@ -180,23 +178,36 @@ const MarketOverview = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {marketData.map((data) => {
-          const asset = marketAssets[data.symbol as keyof typeof marketAssets];
+        {getFilteredSymbols().map(([symbol, asset]) => {
+          const liveData = realTimeDataMap.get(symbol);
+          const price = liveData?.price ?? asset.basePrice;
+          const change = liveData?.change ?? 0;
+          const changePercent = liveData?.changePercent ?? 0;
+          const volume = liveData?.volume ?? Math.floor(Math.random() * 1000000) + 100000;
+          const isLiveData = !!liveData;
+
           return (
             <div 
-              key={data.symbol}
-              className="bg-trading-bg rounded-lg p-4 border border-trading-border hover:border-trading-blue/50 transition-all duration-300 animate-slide-up group hover:shadow-lg hover:shadow-trading-blue/10 cursor-pointer"
-              onClick={() => setSelectedAsset(data.symbol)}
+              key={symbol}
+              className="bg-trading-bg rounded-lg p-4 border border-trading-border hover:border-trading-blue/50 transition-all duration-300 animate-slide-up group hover:shadow-lg hover:shadow-trading-blue/10 cursor-pointer relative"
+              onClick={() => setSelectedAsset(symbol)}
             >
+              {/* Live data indicator */}
+              {isLiveData && (
+                <div className="absolute top-2 right-2">
+                  <div className="w-2 h-2 bg-trading-green rounded-full animate-pulse"></div>
+                </div>
+              )}
+
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
-                  <span className="font-bold text-trading-text">{data.symbol}</span>
-                  <div className={`px-2 py-0.5 rounded text-xs font-medium border ${getAssetTypeColor(data.symbol)}`}>
+                  <span className="font-bold text-trading-text">{symbol}</span>
+                  <div className={`px-2 py-0.5 rounded text-xs font-medium border ${getAssetTypeColor(symbol)}`}>
                     {asset?.type?.toUpperCase()}
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  {getTrendIcon(data.change)}
+                  {getTrendIcon(change)}
                   <BarChart3 className="w-4 h-4 text-trading-cyan opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </div>
@@ -209,56 +220,46 @@ const MarketOverview = () => {
               
               <div className="space-y-2">
                 <div className="text-2xl font-mono font-bold text-trading-text">
-                  ${formatPrice(data.price, data.symbol)}
+                  ${formatPrice(price, symbol)}
                 </div>
                 
-                <div className={`text-sm font-mono ${getChangeColor(data.change)} flex items-center space-x-1`}>
+                <div className={`text-sm font-mono ${getChangeColor(change)} flex items-center space-x-1`}>
                   <span>
-                    {data.change > 0 ? '+' : ''}{data.change.toFixed(4)}
+                    {change > 0 ? '+' : ''}{change.toFixed(4)}
                   </span>
                   <span>
-                    ({data.changePercent > 0 ? '+' : ''}{data.changePercent.toFixed(2)}%)
+                    ({changePercent > 0 ? '+' : ''}{changePercent.toFixed(2)}%)
                   </span>
                 </div>
                 
                 <div className="flex justify-between text-xs text-trading-muted pt-2 border-t border-trading-border/50">
                   <div>
-                    <div className="text-trading-muted">Spread</div>
-                    <div className="font-mono">${data.spread.toFixed(4)}</div>
+                    <div className="text-trading-muted">Volume</div>
+                    <div className="font-mono">{(volume / 1000).toFixed(1)}K</div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-trading-muted">Vol</div>
-                    <div className="font-mono">{(data.volume / 1000).toFixed(1)}K</div>
-                  </div>
-                </div>
-                
-                {data.volatility > 0 && (
-                  <div className="flex justify-between text-xs text-trading-muted">
-                    <div>
-                      <div className="text-trading-muted">Volatility</div>
-                      <div className={`font-mono ${data.volatility > 0.1 ? 'text-trading-red' : 'text-trading-cyan'}`}>
-                        {data.volatility.toFixed(3)}%
+                  {liveData?.marketCap && (
+                    <div className="text-right">
+                      <div className="text-trading-muted">MCap</div>
+                      <div className="font-mono text-trading-cyan">
+                        ${(liveData.marketCap / 1e9).toFixed(1)}B
                       </div>
                     </div>
-                    {data.marketCap && (
-                      <div className="text-right">
-                        <div className="text-trading-muted">MCap</div>
-                        <div className="font-mono text-trading-cyan">
-                          ${(data.marketCap / 1e9).toFixed(1)}B
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
                 
                 {asset?.sector && (
                   <div className="text-xs text-trading-muted">
                     <span className="font-medium">Sector:</span> {asset.sector}
                   </div>
                 )}
+                
+                {isLiveData && (
+                  <div className="text-xs text-trading-green font-medium">
+                    Live Data • {new Date(liveData.timestamp).toLocaleTimeString()}
+                  </div>
+                )}
               </div>
 
-              {/* Click hint */}
               <div className="mt-2 text-xs text-trading-cyan opacity-0 group-hover:opacity-100 transition-opacity text-center">
                 Click for detailed analysis
               </div>
@@ -267,7 +268,7 @@ const MarketOverview = () => {
         })}
       </div>
 
-      {marketData.length === 0 && (
+      {filteredSymbols.length === 0 && (
         <div className="text-center py-8">
           <div className="text-trading-muted">No assets found matching your criteria</div>
           <button
@@ -280,6 +281,15 @@ const MarketOverview = () => {
           >
             Clear filters
           </button>
+        </div>
+      )}
+
+      {/* Error display */}
+      {error && (
+        <div className="mt-4 p-4 bg-trading-red/10 border border-trading-red/20 rounded-lg">
+          <div className="text-trading-red text-sm">
+            Error loading live data: {error}
+          </div>
         </div>
       )}
 
