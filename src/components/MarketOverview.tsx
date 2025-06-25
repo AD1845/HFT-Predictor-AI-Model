@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Minus, Activity, Zap, Filter, Search, Info } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Activity, Zap, Filter, Search, Info, BarChart3 } from 'lucide-react';
 import { MarketData, generateMarketData, marketAssets } from '../utils/hftData';
 import { Input } from './ui/input';
+import DetailedStockView from './DetailedStockView';
 
 const MarketOverview = () => {
   const [marketData, setMarketData] = useState<MarketData[]>([]);
@@ -10,8 +10,8 @@ const MarketOverview = () => {
   const [selectedSector, setSelectedSector] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showDescriptions, setShowDescriptions] = useState<boolean>(false);
+  const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
 
-  // Get symbols by category and sector
   const getFilteredSymbols = () => {
     let entries = Object.entries(marketAssets);
     
@@ -185,7 +185,8 @@ const MarketOverview = () => {
           return (
             <div 
               key={data.symbol}
-              className="bg-trading-bg rounded-lg p-4 border border-trading-border hover:border-trading-blue/50 transition-all duration-300 animate-slide-up group hover:shadow-lg hover:shadow-trading-blue/10"
+              className="bg-trading-bg rounded-lg p-4 border border-trading-border hover:border-trading-blue/50 transition-all duration-300 animate-slide-up group hover:shadow-lg hover:shadow-trading-blue/10 cursor-pointer"
+              onClick={() => setSelectedAsset(data.symbol)}
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
@@ -194,7 +195,10 @@ const MarketOverview = () => {
                     {asset?.type?.toUpperCase()}
                   </div>
                 </div>
-                {getTrendIcon(data.change)}
+                <div className="flex items-center space-x-2">
+                  {getTrendIcon(data.change)}
+                  <BarChart3 className="w-4 h-4 text-trading-cyan opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
               </div>
               
               {showDescriptions && asset?.description && (
@@ -253,6 +257,11 @@ const MarketOverview = () => {
                   </div>
                 )}
               </div>
+
+              {/* Click hint */}
+              <div className="mt-2 text-xs text-trading-cyan opacity-0 group-hover:opacity-100 transition-opacity text-center">
+                Click for detailed analysis
+              </div>
             </div>
           );
         })}
@@ -272,6 +281,14 @@ const MarketOverview = () => {
             Clear filters
           </button>
         </div>
+      )}
+
+      {/* Detailed Stock View Modal */}
+      {selectedAsset && (
+        <DetailedStockView 
+          symbol={selectedAsset} 
+          onClose={() => setSelectedAsset(null)} 
+        />
       )}
     </div>
   );
