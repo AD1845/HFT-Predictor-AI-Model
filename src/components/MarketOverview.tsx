@@ -1,23 +1,49 @@
 
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Minus, Activity, Zap } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Activity, Zap, Filter, Search, Info } from 'lucide-react';
 import { MarketData, generateMarketData, marketAssets } from '../utils/hftData';
+import { Input } from './ui/input';
 
 const MarketOverview = () => {
   const [marketData, setMarketData] = useState<MarketData[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedSector, setSelectedSector] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showDescriptions, setShowDescriptions] = useState<boolean>(false);
 
-  // Get diverse market symbols
-  const getSymbolsByCategory = (category: string) => {
-    const entries = Object.entries(marketAssets);
-    if (category === 'all') {
-      return entries.slice(0, 12); // Show top 12 across all categories
+  // Get symbols by category and sector
+  const getFilteredSymbols = () => {
+    let entries = Object.entries(marketAssets);
+    
+    // Filter by category (type)
+    if (selectedCategory !== 'all') {
+      entries = entries.filter(([_, asset]) => asset.type === selectedCategory);
     }
-    return entries.filter(([_, asset]) => asset.type === category).slice(0, 8);
+    
+    // Filter by sector
+    if (selectedSector !== 'all') {
+      entries = entries.filter(([_, asset]) => asset.sector === selectedSector);
+    }
+    
+    // Filter by search query
+    if (searchQuery) {
+      entries = entries.filter(([symbol, asset]) => 
+        symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (asset.description && asset.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    }
+    
+    return entries.slice(0, 20); // Show up to 20 symbols
+  };
+
+  // Get unique sectors
+  const getSectors = () => {
+    const sectors = Array.from(new Set(Object.values(marketAssets).map(asset => asset.sector)));
+    return sectors.sort();
   };
 
   useEffect(() => {
-    const symbols = getSymbolsByCategory(selectedCategory);
+    const symbols = getFilteredSymbols();
     
     // Initialize market data
     const initialData = symbols.map(([symbol, asset]) => 
@@ -28,9 +54,9 @@ const MarketOverview = () => {
     // Update data every 800ms for more realistic feel
     const interval = setInterval(() => {
       setMarketData(prevData => {
-        const currentSymbols = getSymbolsByCategory(selectedCategory);
+        const currentSymbols = getFilteredSymbols();
         return currentSymbols.map(([symbol, asset], index) => 
-          prevData[index] ? 
+          prevData[index] && prevData[index].symbol === symbol ? 
             generateMarketData(symbol, prevData[index].price) : 
             generateMarketData(symbol, asset.basePrice)
         );
@@ -38,7 +64,7 @@ const MarketOverview = () => {
     }, 800);
 
     return () => clearInterval(interval);
-  }, [selectedCategory]);
+  }, [selectedCategory, selectedSector, searchQuery]);
 
   const getTrendIcon = (change: number) => {
     if (change > 0) return <TrendingUp className="w-4 h-4 text-trading-green" />;
@@ -59,6 +85,7 @@ const MarketOverview = () => {
       case 'stock': return 'bg-trading-blue/10 text-trading-blue border-trading-blue/20';
       case 'forex': return 'bg-trading-purple/10 text-trading-purple border-trading-purple/20';
       case 'commodity': return 'bg-trading-yellow/10 text-trading-yellow border-trading-yellow/20';
+      case 'etf': return 'bg-trading-cyan/10 text-trading-cyan border-trading-cyan/20';
       default: return 'bg-trading-muted/10 text-trading-muted border-trading-muted/20';
     }
   };
@@ -74,14 +101,18 @@ const MarketOverview = () => {
 
   const categories = [
     { key: 'all', label: 'All Markets', icon: Activity },
-    { key: 'crypto', label: 'Crypto', icon: Zap },
     { key: 'stock', label: 'Stocks', icon: TrendingUp },
-    { key: 'forex', label: 'Forex', icon: TrendingDown }
+    { key: 'crypto', label: 'Crypto', icon: Zap },
+    { key: 'forex', label: 'Forex', icon: TrendingDown },
+    { key: 'etf', label: 'ETFs', icon: Activity },
+    { key: 'commodity', label: 'Commodities', icon: TrendingUp }
   ];
+
+  const sectors = getSectors();
 
   return (
     <div className="bg-trading-surface rounded-lg border border-trading-border p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 space-y-4 lg:space-y-0">
         <div>
           <h2 className="text-xl font-semibold text-trading-text mb-1">Market Overview</h2>
           <div className="text-sm text-trading-muted flex items-center space-x-2">
@@ -91,6 +122,46 @@ const MarketOverview = () => {
         </div>
         
         <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setShowDescriptions(!showDescriptions)}
+            className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all duration-200 flex items-center space-x-1 ${
+              showDescriptions
+                ? 'bg-trading-blue/20 text-trading-blue border-trading-blue/30'
+                : 'bg-trading-bg text-trading-muted border-trading-border hover:border-trading-blue/50'
+            }`}
+          >
+            <Info className="w-3 h-3" />
+            <span>Info</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-trading-muted" />
+            <Input
+              placeholder="Search symbols or descriptions..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-trading-bg border-trading-border"
+            />
+          </div>
+          
+          <select 
+            value={selectedSector}
+            onChange={(e) => setSelectedSector(e.target.value)}
+            className="bg-trading-bg border border-trading-border rounded-lg px-3 py-2 text-sm text-trading-text focus:border-trading-cyan focus:outline-none"
+          >
+            <option value="all">All Sectors</option>
+            {sectors.map(sector => (
+              <option key={sector} value={sector}>{sector}</option>
+            ))}
+          </select>
+        </div>
+        
+        <div className="flex flex-wrap gap-2">
           {categories.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -108,7 +179,7 @@ const MarketOverview = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {marketData.map((data) => {
           const asset = marketAssets[data.symbol as keyof typeof marketAssets];
           return (
@@ -125,6 +196,12 @@ const MarketOverview = () => {
                 </div>
                 {getTrendIcon(data.change)}
               </div>
+              
+              {showDescriptions && asset?.description && (
+                <div className="mb-3 p-2 bg-trading-surface rounded text-xs text-trading-muted">
+                  {asset.description}
+                </div>
+              )}
               
               <div className="space-y-2">
                 <div className="text-2xl font-mono font-bold text-trading-text">
@@ -169,11 +246,33 @@ const MarketOverview = () => {
                     )}
                   </div>
                 )}
+                
+                {asset?.sector && (
+                  <div className="text-xs text-trading-muted">
+                    <span className="font-medium">Sector:</span> {asset.sector}
+                  </div>
+                )}
               </div>
             </div>
           );
         })}
       </div>
+
+      {marketData.length === 0 && (
+        <div className="text-center py-8">
+          <div className="text-trading-muted">No assets found matching your criteria</div>
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setSelectedCategory('all');
+              setSelectedSector('all');
+            }}
+            className="mt-2 text-trading-blue hover:text-trading-blue/80 text-sm"
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
     </div>
   );
 };

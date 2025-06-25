@@ -1,4 +1,3 @@
-
 // High-frequency trading data utilities and simulation
 
 export interface MarketData {
@@ -55,31 +54,66 @@ export interface MarketSentiment {
 
 // Extended market data with crypto and traditional assets
 export const marketAssets = {
-  // Traditional Stocks
-  'AAPL': { basePrice: 185.50, type: 'stock', sector: 'Technology' },
-  'GOOGL': { basePrice: 142.30, type: 'stock', sector: 'Technology' },
-  'TSLA': { basePrice: 248.75, type: 'stock', sector: 'Automotive' },
-  'MSFT': { basePrice: 378.25, type: 'stock', sector: 'Technology' },
-  'NVDA': { basePrice: 465.80, type: 'stock', sector: 'Technology' },
-  'SPY': { basePrice: 445.20, type: 'etf', sector: 'Index' },
+  // Technology Stocks
+  'AAPL': { basePrice: 185.50, type: 'stock', sector: 'Technology', description: 'Apple Inc. - Consumer electronics and software' },
+  'GOOGL': { basePrice: 142.30, type: 'stock', sector: 'Technology', description: 'Alphabet Inc. - Search engine and cloud services' },
+  'MSFT': { basePrice: 378.25, type: 'stock', sector: 'Technology', description: 'Microsoft Corporation - Software and cloud computing' },
+  'NVDA': { basePrice: 465.80, type: 'stock', sector: 'Technology', description: 'NVIDIA Corporation - Graphics processing and AI chips' },
+  'META': { basePrice: 325.50, type: 'stock', sector: 'Technology', description: 'Meta Platforms - Social media and virtual reality' },
+  'NFLX': { basePrice: 445.75, type: 'stock', sector: 'Technology', description: 'Netflix Inc. - Streaming entertainment service' },
+  'CRM': { basePrice: 285.40, type: 'stock', sector: 'Technology', description: 'Salesforce Inc. - Customer relationship management' },
+  'ADBE': { basePrice: 575.20, type: 'stock', sector: 'Technology', description: 'Adobe Inc. - Creative software and digital marketing' },
+  
+  // Automotive & Energy
+  'TSLA': { basePrice: 248.75, type: 'stock', sector: 'Automotive', description: 'Tesla Inc. - Electric vehicles and energy storage' },
+  'F': { basePrice: 12.45, type: 'stock', sector: 'Automotive', description: 'Ford Motor Company - Traditional automotive manufacturer' },
+  'GM': { basePrice: 38.90, type: 'stock', sector: 'Automotive', description: 'General Motors - Automotive and mobility services' },
+  'XOM': { basePrice: 115.60, type: 'stock', sector: 'Energy', description: 'Exxon Mobil Corporation - Oil and gas company' },
+  
+  // Financial Services
+  'JPM': { basePrice: 175.85, type: 'stock', sector: 'Financial', description: 'JPMorgan Chase & Co. - Investment banking and financial services' },
+  'BAC': { basePrice: 41.20, type: 'stock', sector: 'Financial', description: 'Bank of America - Consumer and commercial banking' },
+  'WFC': { basePrice: 58.75, type: 'stock', sector: 'Financial', description: 'Wells Fargo & Company - Banking and financial services' },
+  'GS': { basePrice: 385.40, type: 'stock', sector: 'Financial', description: 'Goldman Sachs Group - Investment banking and securities' },
+  
+  // Healthcare & Pharmaceuticals
+  'JNJ': { basePrice: 155.30, type: 'stock', sector: 'Healthcare', description: 'Johnson & Johnson - Pharmaceuticals and medical devices' },
+  'PFE': { basePrice: 28.65, type: 'stock', sector: 'Healthcare', description: 'Pfizer Inc. - Pharmaceutical company' },
+  'UNH': { basePrice: 525.90, type: 'stock', sector: 'Healthcare', description: 'UnitedHealth Group - Health insurance and healthcare services' },
+  'ABBV': { basePrice: 175.45, type: 'stock', sector: 'Healthcare', description: 'AbbVie Inc. - Biopharmaceutical company' },
+  
+  // Consumer & Retail
+  'AMZN': { basePrice: 145.25, type: 'stock', sector: 'Consumer', description: 'Amazon.com Inc. - E-commerce and cloud computing' },
+  'WMT': { basePrice: 165.80, type: 'stock', sector: 'Consumer', description: 'Walmart Inc. - Retail corporation' },
+  'HD': { basePrice: 385.70, type: 'stock', sector: 'Consumer', description: 'Home Depot Inc. - Home improvement retailer' },
+  'NKE': { basePrice: 85.40, type: 'stock', sector: 'Consumer', description: 'Nike Inc. - Athletic footwear and apparel' },
+  
+  // ETFs & Indices
+  'SPY': { basePrice: 445.20, type: 'etf', sector: 'Index', description: 'SPDR S&P 500 ETF - Tracks S&P 500 index' },
+  'QQQ': { basePrice: 385.60, type: 'etf', sector: 'Index', description: 'Invesco QQQ Trust - Tracks NASDAQ-100 index' },
+  'IWM': { basePrice: 220.30, type: 'etf', sector: 'Index', description: 'iShares Russell 2000 ETF - Small-cap stocks' },
   
   // Major Cryptocurrencies
-  'BTC/USD': { basePrice: 67500, type: 'crypto', sector: 'Cryptocurrency' },
-  'ETH/USD': { basePrice: 3450, type: 'crypto', sector: 'Cryptocurrency' },
-  'SOL/USD': { basePrice: 145.80, type: 'crypto', sector: 'Cryptocurrency' },
-  'ADA/USD': { basePrice: 0.45, type: 'crypto', sector: 'Cryptocurrency' },
-  'DOT/USD': { basePrice: 6.85, type: 'crypto', sector: 'Cryptocurrency' },
-  'MATIC/USD': { basePrice: 0.92, type: 'crypto', sector: 'Cryptocurrency' },
+  'BTC/USD': { basePrice: 67500, type: 'crypto', sector: 'Cryptocurrency', description: 'Bitcoin - The original cryptocurrency and digital gold' },
+  'ETH/USD': { basePrice: 3450, type: 'crypto', sector: 'Cryptocurrency', description: 'Ethereum - Smart contract platform and decentralized apps' },
+  'SOL/USD': { basePrice: 145.80, type: 'crypto', sector: 'Cryptocurrency', description: 'Solana - High-performance blockchain for dApps' },
+  'ADA/USD': { basePrice: 0.45, type: 'crypto', sector: 'Cryptocurrency', description: 'Cardano - Proof-of-stake blockchain platform' },
+  'DOT/USD': { basePrice: 6.85, type: 'crypto', sector: 'Cryptocurrency', description: 'Polkadot - Interoperable blockchain network' },
+  'MATIC/USD': { basePrice: 0.92, type: 'crypto', sector: 'Cryptocurrency', description: 'Polygon - Ethereum scaling and infrastructure' },
+  'AVAX/USD': { basePrice: 35.40, type: 'crypto', sector: 'Cryptocurrency', description: 'Avalanche - Platform for decentralized applications' },
+  'LINK/USD': { basePrice: 14.75, type: 'crypto', sector: 'Cryptocurrency', description: 'Chainlink - Decentralized oracle network' },
   
   // Forex Pairs
-  'EUR/USD': { basePrice: 1.0845, type: 'forex', sector: 'Currency' },
-  'GBP/USD': { basePrice: 1.2675, type: 'forex', sector: 'Currency' },
-  'USD/JPY': { basePrice: 149.85, type: 'forex', sector: 'Currency' },
+  'EUR/USD': { basePrice: 1.0845, type: 'forex', sector: 'Currency', description: 'Euro vs US Dollar - Most traded currency pair' },
+  'GBP/USD': { basePrice: 1.2675, type: 'forex', sector: 'Currency', description: 'British Pound vs US Dollar - Cable' },
+  'USD/JPY': { basePrice: 149.85, type: 'forex', sector: 'Currency', description: 'US Dollar vs Japanese Yen - Major Asian pair' },
+  'AUD/USD': { basePrice: 0.6720, type: 'forex', sector: 'Currency', description: 'Australian Dollar vs US Dollar - Aussie' },
   
   // Commodities
-  'GOLD': { basePrice: 2025.50, type: 'commodity', sector: 'Precious Metals' },
-  'SILVER': { basePrice: 24.85, type: 'commodity', sector: 'Precious Metals' },
-  'OIL': { basePrice: 78.90, type: 'commodity', sector: 'Energy' }
+  'GOLD': { basePrice: 2025.50, type: 'commodity', sector: 'Precious Metals', description: 'Gold futures - Safe haven precious metal' },
+  'SILVER': { basePrice: 24.85, type: 'commodity', sector: 'Precious Metals', description: 'Silver futures - Industrial and precious metal' },
+  'OIL': { basePrice: 78.90, type: 'commodity', sector: 'Energy', description: 'Crude Oil futures - Global energy commodity' },
+  'COPPER': { basePrice: 3.85, type: 'commodity', sector: 'Industrial Metals', description: 'Copper futures - Industrial metal and economic indicator' }
 };
 
 // Market data simulation with enhanced features
