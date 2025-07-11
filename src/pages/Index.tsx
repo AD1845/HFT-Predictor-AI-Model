@@ -13,8 +13,28 @@ import PredictionPanel from '../components/PredictionPanel';
 import StrategyPanel from '../components/StrategyPanel';
 import SecureTradingForm from '../components/SecureTradingForm';
 import NotificationSystem from '../components/NotificationSystem';
+import { useToast } from '../components/ui/use-toast';
 
 const Index = () => {
+  const { toast } = useToast();
+
+  const handleTradeSubmit = async (trade: { symbol: string; amount: number; type: 'buy' | 'sell' }) => {
+    try {
+      console.log('Executing trade:', trade);
+      
+      // Simulate trade execution
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: 'Trade Executed Successfully',
+        description: `${trade.type.toUpperCase()} order for $${trade.amount.toLocaleString()} of ${trade.symbol} has been processed.`,
+      });
+    } catch (error) {
+      console.error('Trade execution failed:', error);
+      throw error;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-trading-bg">
       <TradingHeader />
@@ -48,7 +68,7 @@ const Index = () => {
         {/* Strategy and Trading Forms */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <StrategyPanel />
-          <SecureTradingForm />
+          <SecureTradingForm onSubmit={handleTradeSubmit} />
         </div>
       </div>
       
