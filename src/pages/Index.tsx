@@ -8,6 +8,7 @@ import LiveDataDashboard from '../components/LiveDataDashboard';
 import MarketSentiment from '../components/MarketSentiment';
 import PortfolioAnalytics from '../components/PortfolioAnalytics';
 import LiveTradingPanel from '../components/LiveTradingPanel';
+import OptimizedHFTDashboard from '../components/OptimizedHFTDashboard';
 import AITradingBot from '../components/AITradingBot';
 import PredictionPanel from '../components/PredictionPanel';
 import StrategyPanel from '../components/StrategyPanel';
@@ -41,6 +42,12 @@ const Index = () => {
       <TradingHeader />
       
       <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Optimized HFT Dashboard - Ultra-low latency */}
+        <OptimizedHFTDashboard />
+        
+        {/* Live Trading Panel - Advanced Features */}
+        <LiveTradingPanel />
+        
         {/* HFT AI Predictor - Main Feature */}
         <HFTPredictor />
         

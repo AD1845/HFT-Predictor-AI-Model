@@ -1,193 +1,278 @@
-
-import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, AlertCircle, Shield } from 'lucide-react';
-import SecureTradingForm from './SecureTradingForm';
-import { useToast } from './ui/use-toast';
-import { useSecurity } from '../contexts/SecurityContext';
-
-interface Position {
-  id: number;
-  symbol: string;
-  amount: number;
-  entryPrice: number;
-  currentPrice: number;
-  pnl: number;
-  type: 'long' | 'short';
-}
-
-interface Trade {
-  id: number;
-  symbol: string;
-  type: 'buy' | 'sell';
-  amount: number;
-  price: number;
-  time: string;
-  status: 'pending' | 'filled' | 'rejected';
-}
+import React, { useState } from 'react';
+import { Play, Pause, Settings, TrendingUp, AlertTriangle, DollarSign, Target, Activity, Zap } from 'lucide-react';
+import { useOptimizedHFTPredictor } from '../hooks/useOptimizedHFTPredictor';
+import { Card } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 
 const LiveTradingPanel = () => {
-  const [marketData, setMarketData] = useState({
-    'BTC/USD': { price: 45200, change: 0.01 },
-    'ETH/USD': { price: 3190, change: -0.005 },
-    'AAPL': { price: 152, change: 0.008 }
-  });
+  const [symbols] = useState(['BTC/USD', 'ETH/USD', 'AAPL', 'TSLA', 'NVDA', 'GOOGL']);
+  const [throttleMs, setThrottleMs] = useState(100);
+  
+  const {
+    predictions,
+    backtestResults,
+    pnlMetrics,
+    loading,
+    error,
+    isLiveTrading,
+    riskManagement,
+    runBacktest,
+    toggleLiveTrading,
+    setRiskManagement
+  } = useOptimizedHFTPredictor(symbols, throttleMs);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setMarketData(prev => {
-        const newData = { ...prev };
-        for (const symbol in newData) {
-          const change = (Math.random() - 0.5) * 0.02;
-          newData[symbol].price += newData[symbol].price * change;
-          newData[symbol].change = change;
-        }
-        return newData;
-      });
-    }, 5000);
+  const avgLatency = predictions.length > 0 
+    ? predictions.reduce((sum, p) => sum + p.latency_ms, 0) / predictions.length 
+    : 0;
 
-    return () => clearInterval(interval);
-  }, []);
+  const getLatencyColor = (latency: number) => {
+    if (latency < 5) return 'text-trading-green';
+    if (latency < 10) return 'text-trading-yellow';
+    return 'text-trading-red';
+  };
 
-  const [positions, setPositions] = useState([
-    { id: 1, symbol: 'BTC/USD', amount: 0.5, entryPrice: 45000, currentPrice: 45250, pnl: 125, type: 'long' },
-    { id: 2, symbol: 'ETH/USD', amount: 2.5, entryPrice: 3200, currentPrice: 3180, pnl: -50, type: 'long' },
-    { id: 3, symbol: 'AAPL', amount: 100, entryPrice: 150, currentPrice: 152, pnl: 200, type: 'long' }
-  ]);
-
-  const [recentTrades, setRecentTrades] = useState([
-    { id: 1, symbol: 'BTC/USD', type: 'buy', amount: 0.1, price: 45200, time: '10:30:15', status: 'filled' },
-    { id: 2, symbol: 'ETH/USD', type: 'sell', amount: 0.5, price: 3190, time: '10:28:42', status: 'filled' },
-    { id: 3, symbol: 'TSLA', type: 'buy', amount: 50, price: 240, time: '10:25:18', status: 'pending' }
-  ]);
-
-  const { toast } = useToast();
-  const { isAuthenticated, checkPermission } = useSecurity();
-
-  const handleSecureTrade = async (trade: { symbol: string; amount: number; type: 'buy' | 'sell' }) => {
-    if (!isAuthenticated) {
-      toast({
-        title: 'Authentication Required',
-        description: 'Please log in to execute trades',
-        variant: 'destructive',
-      });
-      return;
+  const getDirectionIcon = (direction: string) => {
+    switch (direction) {
+      case 'BUY': return <TrendingUp className="w-3 h-3" />;
+      case 'SELL': return <Activity className="w-3 h-3 rotate-180" />;
+      default: return <Activity className="w-3 h-3" />;
     }
-
-    if (!checkPermission('execute_trades')) {
-      toast({
-        title: 'Permission Denied',
-        description: 'You do not have permission to execute trades',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Simulate trade execution
-    const newTrade = {
-      id: Date.now(),
-      symbol: trade.symbol,
-      type: trade.type,
-      amount: trade.amount,
-      price: Math.random() * 1000 + 100, // Simulated price
-      time: new Date().toLocaleTimeString(),
-      status: 'filled' as const
-    };
-
-    setRecentTrades(prev => [newTrade, ...prev.slice(0, 9)]);
-    
-    console.log('Secure trade executed:', trade);
   };
 
   return (
     <div className="space-y-6">
-      {/* Security Status Banner */}
-      <div className="bg-trading-green/10 border border-trading-green/20 rounded-lg p-4">
-        <div className="flex items-center space-x-2">
-          <Shield className="w-5 h-5 text-trading-green" />
-          <span className="text-trading-green font-medium">Secure Trading Environment Active</span>
+      {/* Control Panel */}
+      <Card className="bg-trading-surface border-trading-border p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              <Zap className="w-6 h-6 text-trading-purple" />
+              {isLiveTrading && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-trading-green rounded-full animate-pulse" />
+              )}
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-trading-text">Live Trading Engine</h2>
+              <div className="text-sm text-trading-muted">
+                Ultra-low latency • {throttleMs}ms intervals • {symbols.length} symbols
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <Badge variant={avgLatency < 10 ? "default" : "destructive"} className="font-mono">
+              {avgLatency.toFixed(1)}ms avg
+            </Badge>
+            <Button
+              onClick={toggleLiveTrading}
+              className={`${
+                isLiveTrading 
+                  ? 'bg-trading-red/20 text-trading-red border-trading-red/30 hover:bg-trading-red/30' 
+                  : 'bg-trading-green/20 text-trading-green border-trading-green/30 hover:bg-trading-green/30'
+              }`}
+            >
+              {isLiveTrading ? (
+                <>
+                  <Pause className="w-4 h-4 mr-2" />
+                  Stop Trading
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 mr-2" />
+                  Start Trading
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={() => runBacktest(30)}
+              disabled={loading}
+              className="bg-trading-blue/20 text-trading-blue border-trading-blue/30 hover:bg-trading-blue/30"
+            >
+              Run Backtest
+            </Button>
+          </div>
         </div>
-        <p className="text-trading-muted text-sm mt-1">
-          All trades are validated, sanitized, and rate-limited for maximum security
-        </p>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Secure Trading Form */}
-        <SecureTradingForm onSubmit={handleSecureTrade} />
+        {/* Performance Metrics */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-trading-bg rounded-lg p-3 border border-trading-border/50">
+            <div className="flex items-center space-x-2 mb-1">
+              <DollarSign className="w-4 h-4 text-trading-green" />
+              <span className="text-xs text-trading-muted">Total P&L</span>
+            </div>
+            <div className={`text-lg font-mono font-bold ${
+              pnlMetrics.total_pnl >= 0 ? 'text-trading-green' : 'text-trading-red'
+            }`}>
+              ${pnlMetrics.total_pnl.toFixed(2)}
+            </div>
+          </div>
+          
+          <div className="bg-trading-bg rounded-lg p-3 border border-trading-border/50">
+            <div className="flex items-center space-x-2 mb-1">
+              <Target className="w-4 h-4 text-trading-cyan" />
+              <span className="text-xs text-trading-muted">Win Rate</span>
+            </div>
+            <div className="text-lg font-mono font-bold text-trading-cyan">
+              {pnlMetrics.win_rate.toFixed(1)}%
+            </div>
+          </div>
+          
+          <div className="bg-trading-bg rounded-lg p-3 border border-trading-border/50">
+            <div className="flex items-center space-x-2 mb-1">
+              <Activity className="w-4 h-4 text-trading-purple" />
+              <span className="text-xs text-trading-muted">Sharpe Ratio</span>
+            </div>
+            <div className="text-lg font-mono font-bold text-trading-purple">
+              {pnlMetrics.sharpe_ratio.toFixed(2)}
+            </div>
+          </div>
+          
+          <div className="bg-trading-bg rounded-lg p-3 border border-trading-border/50">
+            <div className="flex items-center space-x-2 mb-1">
+              <AlertTriangle className="w-4 h-4 text-trading-red" />
+              <span className="text-xs text-trading-muted">Max Drawdown</span>
+            </div>
+            <div className="text-lg font-mono font-bold text-trading-red">
+              {pnlMetrics.max_drawdown.toFixed(1)}%
+            </div>
+          </div>
+        </div>
 
-        <div className="bg-trading-surface rounded-lg border border-trading-border p-6">
-          <h3 className="text-lg font-semibold text-trading-text mb-4">Active Positions</h3>
-          <div className="space-y-3">
-            {positions.map((position) => (
-              <div key={position.id} className="bg-trading-bg rounded border border-trading-border/50 p-3">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <span className="font-medium text-trading-text">{position.symbol}</span>
-                    <span className={`ml-2 text-xs px-2 py-1 rounded ${
-                      position.type === 'long' ? 'bg-trading-green/20 text-trading-green' : 'bg-trading-red/20 text-trading-red'
-                    }`}>
-                      {position.type.toUpperCase()}
-                    </span>
+        {/* Risk Management */}
+        <div className="bg-trading-bg rounded-lg p-4 border border-trading-border/50">
+          <div className="flex items-center space-x-2 mb-3">
+            <Settings className="w-4 h-4 text-trading-yellow" />
+            <span className="font-medium text-trading-text">Risk Management</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <span className="text-trading-muted">Max Position</span>
+              <div className="font-mono text-trading-text">${riskManagement.maxPositionSize}</div>
+            </div>
+            <div>
+              <span className="text-trading-muted">Stop Loss</span>
+              <div className="font-mono text-trading-text">{riskManagement.stopLoss}%</div>
+            </div>
+            <div>
+              <span className="text-trading-muted">Daily Limit</span>
+              <div className="font-mono text-trading-text">${riskManagement.dailyLossLimit}</div>
+            </div>
+            <div>
+              <span className="text-trading-muted">Min Accuracy</span>
+              <div className="font-mono text-trading-text">{riskManagement.accuracyThreshold}%</div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Live Predictions */}
+      <Card className="bg-trading-surface border-trading-border p-6">
+        <h3 className="text-lg font-semibold text-trading-text mb-4">Live Predictions</h3>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-trading-red/10 border border-trading-red/20 rounded-lg text-trading-red text-sm">
+            {error}
+          </div>
+        )}
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {predictions.map((prediction) => (
+            <div key={prediction.symbol} className="bg-trading-bg rounded-lg p-4 border border-trading-border/50">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <span className="font-bold text-trading-text">{prediction.symbol}</span>
+                  <div className={`flex items-center space-x-1 ${
+                    prediction.direction === 'BUY' ? 'text-trading-green' : 
+                    prediction.direction === 'SELL' ? 'text-trading-red' : 'text-trading-yellow'
+                  }`}>
+                    {getDirectionIcon(prediction.direction)}
+                    <span className="text-xs font-medium">{prediction.direction}</span>
                   </div>
-                  <span className={`font-bold ${position.pnl >= 0 ? 'text-trading-green' : 'text-trading-red'}`}>
-                    {position.pnl >= 0 ? '+' : ''}${position.pnl}
+                </div>
+                <Badge 
+                  variant="outline" 
+                  className={`font-mono text-xs ${getLatencyColor(prediction.latency_ms)}`}
+                >
+                  {prediction.latency_ms.toFixed(1)}ms
+                </Badge>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-trading-muted">Price</span>
+                  <span className="font-mono text-trading-text">${prediction.currentPrice.toFixed(4)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-trading-muted">Prediction</span>
+                  <span className="font-mono text-trading-cyan">${prediction.predictedPrice.toFixed(4)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-trading-muted">Confidence</span>
+                  <span className={`font-mono ${
+                    prediction.confidence > 70 ? 'text-trading-green' : 
+                    prediction.confidence > 50 ? 'text-trading-yellow' : 'text-trading-red'
+                  }`}>
+                    {prediction.confidence.toFixed(1)}%
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-sm text-trading-muted">
-                  <div>Amount: {position.amount}</div>
-                  <div>Entry: ${position.entryPrice}</div>
-                  <div>Current: ${position.currentPrice}</div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-trading-muted">Signal</span>
+                  <span className="font-mono text-trading-purple">
+                    {prediction.signal_strength.toFixed(3)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {predictions.length === 0 && !loading && (
+          <div className="text-center py-8 text-trading-muted">
+            No live predictions available. Start trading to see predictions.
+          </div>
+        )}
+      </Card>
+
+      {/* Backtest Results */}
+      {backtestResults.length > 0 && (
+        <Card className="bg-trading-surface border-trading-border p-6">
+          <h3 className="text-lg font-semibold text-trading-text mb-4">Backtest Results</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {backtestResults.map((result) => (
+              <div key={result.symbol} className="bg-trading-bg rounded-lg p-4 border border-trading-border/50">
+                <div className="font-bold text-trading-text mb-3">{result.symbol}</div>
+                
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-trading-muted">Total Trades</span>
+                    <span className="text-trading-text">{result.total_trades}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-trading-muted">Win Rate</span>
+                    <span className="text-trading-cyan">{result.win_rate.toFixed(1)}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-trading-muted">Total P&L</span>
+                    <span className={result.total_pnl >= 0 ? 'text-trading-green' : 'text-trading-red'}>
+                      ${result.total_pnl.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-trading-muted">Sharpe Ratio</span>
+                    <span className="text-trading-purple">{result.sharpe_ratio.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-trading-muted">Max Drawdown</span>
+                    <span className="text-trading-red">{result.max_drawdown.toFixed(1)}%</span>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      <div className="bg-trading-surface rounded-lg border border-trading-border p-6">
-        <h3 className="text-lg font-semibold text-trading-text mb-4">Recent Trades</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="border-b border-trading-border/50">
-              <tr className="text-trading-muted">
-                <th className="text-left py-2">Symbol</th>
-                <th className="text-left py-2">Type</th>
-                <th className="text-right py-2">Amount</th>
-                <th className="text-right py-2">Price</th>
-                <th className="text-right py-2">Time</th>
-                <th className="text-right py-2">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentTrades.map((trade) => (
-                <tr key={trade.id} className="border-b border-trading-border/30">
-                  <td className="py-2 text-trading-text font-medium">{trade.symbol}</td>
-                  <td className="py-2">
-                    <span className={`flex items-center space-x-1 ${
-                      trade.type === 'buy' ? 'text-trading-green' : 'text-trading-red'
-                    }`}>
-                      {trade.type === 'buy' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                      <span className="capitalize">{trade.type}</span>
-                    </span>
-                  </td>
-                  <td className="py-2 text-right text-trading-text">{trade.amount}</td>
-                  <td className="py-2 text-right text-trading-text">${trade.price}</td>
-                  <td className="py-2 text-right text-trading-muted">{trade.time}</td>
-                  <td className="py-2 text-right">
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      trade.status === 'filled' 
-                        ? 'bg-trading-green/20 text-trading-green' 
-                        : 'bg-trading-yellow/20 text-trading-yellow'
-                    }`}>
-                      {trade.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+        </Card>
+      )}
     </div>
   );
 };
