@@ -15,6 +15,8 @@ import StrategyPanel from '../components/StrategyPanel';
 import SecureTradingForm from '../components/SecureTradingForm';
 import NotificationSystem from '../components/NotificationSystem';
 import StrategyEngine from '../components/StrategyEngine';
+import { HedgeFundPipeline } from '../components/HedgeFundPipeline';
+import { MarketMakingBot } from '../components/MarketMakingBot';
 import { useToast } from '../components/ui/use-toast';
 
 const Index = () => {
@@ -73,6 +75,9 @@ const Index = () => {
           <PredictionPanel />
         </div>
         
+        {/* Hedge Fund Pipeline - Advanced Feature Extraction */}
+        <HedgeFundPipeline />
+        
         {/* Strategy Engine - Main Feature */}
         <StrategyEngine onSignalGenerated={(signals) => {
           console.log('New trading signals generated:', signals);
@@ -83,6 +88,9 @@ const Index = () => {
             });
           }
         }} />
+        
+        {/* Market Making Bot */}
+        <MarketMakingBot />
         
         {/* Strategy and Trading Forms */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
