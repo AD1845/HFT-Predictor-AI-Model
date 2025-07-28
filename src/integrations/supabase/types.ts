@@ -86,6 +86,75 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          role: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_trades: {
+        Row: {
+          amount: number
+          created_at: string
+          executed_at: string | null
+          id: string
+          price: number
+          status: string | null
+          symbol: string
+          trade_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          executed_at?: string | null
+          id?: string
+          price: number
+          status?: string | null
+          symbol: string
+          trade_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          executed_at?: string | null
+          id?: string
+          price?: number
+          status?: string | null
+          symbol?: string
+          trade_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, TrendingUp, Zap, Wifi, Database, Clock } from 'lucide-react';
+import { Activity, TrendingUp, Zap, Wifi, Database, Clock, LogOut, User } from 'lucide-react';
+import { Button } from "./ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback } from "./ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import NotificationSystem from './NotificationSystem';
 
 const TradingHeader = () => {
-  // ... keep existing code (state and useEffect hooks)
+  const { user, profile, signOut } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [latency, setLatency] = useState(0.23);
   const [dataPoints, setDataPoints] = useState(0);
@@ -116,6 +120,36 @@ const TradingHeader = () => {
 
             {/* Notification System */}
             <NotificationSystem />
+
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-2 ml-4">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-primary/20 text-primary">
+                        {profile?.display_name?.[0] || user.email?.[0] || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="hidden sm:inline text-sm font-medium">
+                      {profile?.display_name || user.email?.split('@')[0] || 'User'}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem className="flex items-center space-x-2">
+                    <User className="h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={signOut}
+                    className="flex items-center space-x-2 text-destructive focus:text-destructive"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign Out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </div>

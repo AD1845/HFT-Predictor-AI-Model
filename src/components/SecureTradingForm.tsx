@@ -3,7 +3,9 @@ import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useToast } from './ui/use-toast';
-import { validateTradeInput, validateTradingAmount, validateSymbol, sanitizeInput, apiRateLimit } from '../utils/security';
+import { useAuth } from '@/contexts/AuthContext';
+import { validateTradeInput, sanitizeInput, validateTradingAmount, validateSymbol, clientRateLimit } from '../utils/security';
+import { supabase } from '@/integrations/supabase/client';
 import { Shield, AlertTriangle, HelpCircle, TrendingUp, DollarSign, Info } from 'lucide-react';
 import { marketAssets } from '../utils/hftData';
 
@@ -12,6 +14,7 @@ interface SecureTradingFormProps {
 }
 
 const SecureTradingForm: React.FC<SecureTradingFormProps> = ({ onSubmit }) => {
+  const { user } = useAuth();
   const [symbol, setSymbol] = useState('');
   const [amount, setAmount] = useState('');
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
@@ -78,8 +81,18 @@ const SecureTradingForm: React.FC<SecureTradingFormProps> = ({ onSubmit }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Check authentication
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'You must be logged in to execute trades.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     // Rate limiting check
-    if (!apiRateLimit.isAllowed('trading_form')) {
+    if (!clientRateLimit.isAllowed('trading_form')) {
       toast({
         title: 'Rate Limit Exceeded',
         description: 'Too many requests. Please wait before submitting again.',
@@ -100,16 +113,13 @@ const SecureTradingForm: React.FC<SecureTradingFormProps> = ({ onSubmit }) => {
     setIsLoading(true);
 
     try {
-      const trade = {
-        symbol: sanitizeInput(symbol).toUpperCase(),
-        amount: parseFloat(amount),
-        type: tradeType,
-      };
-
+      const sanitizedSymbol = sanitizeInput(symbol).toUpperCase();
+      const numericAmount = parseFloat(amount);
+      
       // Additional security check before execution
-      if (trade.amount > 10000) {
+      if (numericAmount > 10000) {
         const confirmed = window.confirm(
-          `You are about to ${tradeType} $${trade.amount.toLocaleString()} of ${trade.symbol}. This is a large trade. Are you sure?`
+          `You are about to ${tradeType} $${numericAmount.toLocaleString()} of ${sanitizedSymbol}. This is a large trade. Are you sure?`
         );
         if (!confirmed) {
           setIsLoading(false);
@@ -117,22 +127,44 @@ const SecureTradingForm: React.FC<SecureTradingFormProps> = ({ onSubmit }) => {
         }
       }
 
+      // Store trade in database
+      const { error } = await supabase
+        .from('user_trades')
+        .insert({
+          user_id: user.id,
+          symbol: sanitizedSymbol,
+          trade_type: tradeType,
+          amount: numericAmount,
+          price: selectedAssetInfo?.basePrice || 0,
+          status: 'pending'
+        });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const trade = {
+        symbol: sanitizedSymbol,
+        amount: numericAmount,
+        type: tradeType,
+      };
+
       await onSubmit(trade);
       
       toast({
         title: 'Trade Executed',
-        description: `Successfully ${tradeType === 'buy' ? 'bought' : 'sold'} $${trade.amount.toLocaleString()} of ${trade.symbol}`,
+        description: `Successfully ${tradeType === 'buy' ? 'bought' : 'sold'} $${numericAmount.toLocaleString()} of ${sanitizedSymbol}`,
       });
 
       // Reset form
       setSymbol('');
       setAmount('');
       setSelectedAssetInfo(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Trade execution error:', error);
       toast({
         title: 'Trade Failed',
-        description: 'Failed to execute trade. Please try again.',
+        description: error.message || 'Failed to execute trade. Please try again.',
         variant: 'destructive',
       });
     } finally {

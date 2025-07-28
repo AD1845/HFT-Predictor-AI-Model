@@ -27,13 +27,13 @@ export const validateSymbol = (symbol: string): boolean => {
   return symbolRegex.test(symbol.toUpperCase());
 };
 
-// Rate limiting for API calls
-class RateLimit {
+// Client-side rate limiting (note: this should be supplemented with server-side limiting)
+class ClientRateLimit {
   private requests: Map<string, number[]> = new Map();
   private maxRequests: number;
   private windowMs: number;
 
-  constructor(maxRequests: number = 100, windowMs: number = 60000) {
+  constructor(maxRequests: number = 10, windowMs: number = 60000) {
     this.maxRequests = maxRequests;
     this.windowMs = windowMs;
   }
@@ -53,9 +53,13 @@ class RateLimit {
     this.requests.set(key, validRequests);
     return true;
   }
+
+  clear(): void {
+    this.requests.clear();
+  }
 }
 
-export const apiRateLimit = new RateLimit();
+export const clientRateLimit = new ClientRateLimit();
 
 // Secure session management
 export const generateSecureToken = (): string => {
