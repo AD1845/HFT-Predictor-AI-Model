@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useToast } from './ui/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 import { validateTradeInput, sanitizeInput, validateTradingAmount, validateSymbol, clientRateLimit } from '../utils/security';
 import { supabase } from '@/integrations/supabase/client';
 import { Shield, AlertTriangle, HelpCircle, TrendingUp, DollarSign, Info } from 'lucide-react';
@@ -14,7 +13,6 @@ interface SecureTradingFormProps {
 }
 
 const SecureTradingForm: React.FC<SecureTradingFormProps> = ({ onSubmit }) => {
-  const { user } = useAuth();
   const [symbol, setSymbol] = useState('');
   const [amount, setAmount] = useState('');
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
@@ -81,16 +79,6 @@ const SecureTradingForm: React.FC<SecureTradingFormProps> = ({ onSubmit }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check authentication
-    if (!user) {
-      toast({
-        title: 'Authentication Required',
-        description: 'You must be logged in to execute trades.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
     // Rate limiting check
     if (!clientRateLimit.isAllowed('trading_form')) {
       toast({
@@ -127,11 +115,11 @@ const SecureTradingForm: React.FC<SecureTradingFormProps> = ({ onSubmit }) => {
         }
       }
 
-      // Store trade in database
+      // Store trade in database (public access)
       const { error } = await supabase
         .from('user_trades')
         .insert({
-          user_id: user.id,
+          user_id: crypto.randomUUID(), // Generate random ID for public access
           symbol: sanitizedSymbol,
           trade_type: tradeType,
           amount: numericAmount,
