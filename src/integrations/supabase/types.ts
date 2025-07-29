@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      drift_alerts: {
+        Row: {
+          created_at: string
+          features: Json | null
+          id: string
+          message: string
+          metadata: Json | null
+          resolved: boolean
+          severity: string
+          timestamp: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          features?: Json | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          resolved?: boolean
+          severity: string
+          timestamp: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          features?: Json | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          resolved?: boolean
+          severity?: string
+          timestamp?: string
+          type?: string
+        }
+        Relationships: []
+      }
       market_data: {
         Row: {
           change_amount: number | null
@@ -86,6 +122,132 @@ export type Database = {
         }
         Relationships: []
       }
+      model_deployments: {
+        Row: {
+          config: Json | null
+          created_at: string
+          deployed_at: string
+          id: string
+          job_id: string | null
+          metrics: Json | null
+          status: string
+          version: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string
+          deployed_at: string
+          id?: string
+          job_id?: string | null
+          metrics?: Json | null
+          status?: string
+          version: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string
+          deployed_at?: string
+          id?: string
+          job_id?: string | null
+          metrics?: Json | null
+          status?: string
+          version?: string
+        }
+        Relationships: []
+      }
+      online_learning_logs: {
+        Row: {
+          created_at: string
+          data_points: number
+          id: string
+          symbols: string[] | null
+          timestamp: string
+          update_metrics: Json | null
+        }
+        Insert: {
+          created_at?: string
+          data_points: number
+          id?: string
+          symbols?: string[] | null
+          timestamp: string
+          update_metrics?: Json | null
+        }
+        Update: {
+          created_at?: string
+          data_points?: number
+          id?: string
+          symbols?: string[] | null
+          timestamp?: string
+          update_metrics?: Json | null
+        }
+        Relationships: []
+      }
+      order_book_data: {
+        Row: {
+          asks: Json
+          bids: Json
+          created_at: string
+          exchange: string
+          id: string
+          symbol: string
+          timestamp: string
+        }
+        Insert: {
+          asks: Json
+          bids: Json
+          created_at?: string
+          exchange: string
+          id?: string
+          symbol: string
+          timestamp: string
+        }
+        Update: {
+          asks?: Json
+          bids?: Json
+          created_at?: string
+          exchange?: string
+          id?: string
+          symbol?: string
+          timestamp?: string
+        }
+        Relationships: []
+      }
+      prediction_logs: {
+        Row: {
+          confidence: number
+          created_at: string
+          features: Json | null
+          id: string
+          latency: number
+          model_version: string | null
+          prediction: number
+          symbol: string
+          timestamp: string
+        }
+        Insert: {
+          confidence: number
+          created_at?: string
+          features?: Json | null
+          id?: string
+          latency: number
+          model_version?: string | null
+          prediction: number
+          symbol: string
+          timestamp: string
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          features?: Json | null
+          id?: string
+          latency?: number
+          model_version?: string | null
+          prediction?: number
+          symbol?: string
+          timestamp?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -116,6 +278,105 @@ export type Database = {
           role?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      stream_buffers: {
+        Row: {
+          buffer_data: Json
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          buffer_data: Json
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          buffer_data?: Json
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tick_data: {
+        Row: {
+          ask: number | null
+          bid: number | null
+          created_at: string
+          exchange: string
+          id: string
+          price: number
+          spread: number | null
+          symbol: string
+          timestamp: string
+          volume: number
+        }
+        Insert: {
+          ask?: number | null
+          bid?: number | null
+          created_at?: string
+          exchange: string
+          id?: string
+          price: number
+          spread?: number | null
+          symbol: string
+          timestamp: string
+          volume: number
+        }
+        Update: {
+          ask?: number | null
+          bid?: number | null
+          created_at?: string
+          exchange?: string
+          id?: string
+          price?: number
+          spread?: number | null
+          symbol?: string
+          timestamp?: string
+          volume?: number
+        }
+        Relationships: []
+      }
+      training_jobs: {
+        Row: {
+          config: Json | null
+          created_at: string
+          data_points: number | null
+          end_time: string | null
+          error_message: string | null
+          id: string
+          metrics: Json | null
+          start_time: string
+          status: string
+          symbols: string[] | null
+          validation_results: Json | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string
+          data_points?: number | null
+          end_time?: string | null
+          error_message?: string | null
+          id?: string
+          metrics?: Json | null
+          start_time: string
+          status?: string
+          symbols?: string[] | null
+          validation_results?: Json | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string
+          data_points?: number | null
+          end_time?: string | null
+          error_message?: string | null
+          id?: string
+          metrics?: Json | null
+          start_time?: string
+          status?: string
+          symbols?: string[] | null
+          validation_results?: Json | null
         }
         Relationships: []
       }
@@ -160,6 +421,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       upsert_market_data: {
         Args: {
           p_symbol: string
