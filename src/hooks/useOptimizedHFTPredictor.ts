@@ -156,9 +156,9 @@ export const useOptimizedHFTPredictor = (symbols: string[], throttleMs = 100) =>
     setLoading(true);
     
     try {
-      // Fetch live data (Binance/Alpaca integration)
-      const { data: marketData, error: marketError } = await supabase.functions.invoke('fetch-live-data', {
-        body: { symbols, source: 'binance' }
+      // Fetch live data using new real-time HFT endpoint
+      const { data: marketData, error: marketError } = await supabase.functions.invoke('real-time-hft-data', {
+        body: { symbols, realtime: true }
       });
 
       if (marketError) throw marketError;

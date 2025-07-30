@@ -42,8 +42,8 @@ export const useRealTimeMarketData = (symbols: string[], refreshInterval = 30000
         })
 
       if (needsFreshData) {
-        // Fetch fresh data from edge function
-        const { data: freshData, error: functionError } = await supabase.functions.invoke('fetch-market-data', {
+        // Fetch fresh data from enhanced real-time endpoint
+        const { data: freshData, error: functionError } = await supabase.functions.invoke('real-time-hft-data', {
           body: { symbols }
         })
 

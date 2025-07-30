@@ -17,6 +17,7 @@ import NotificationSystem from '../components/NotificationSystem';
 import StrategyEngine from '../components/StrategyEngine';
 import { HedgeFundPipeline } from '../components/HedgeFundPipeline';
 import { MarketMakingBot } from '../components/MarketMakingBot';
+import { AdvancedHFTDashboard } from '../components/AdvancedHFTDashboard';
 import { useToast } from '../components/ui/use-toast';
 
 const Index = () => {
@@ -44,6 +45,9 @@ const Index = () => {
       <TradingHeader />
       
       <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Advanced HFT Strategy Dashboard - Real-time Multi-Strategy */}
+        <AdvancedHFTDashboard />
+        
         {/* Optimized HFT Dashboard - Ultra-low latency */}
         <OptimizedHFTDashboard />
         
