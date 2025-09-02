@@ -89,6 +89,75 @@ export type Database = {
         }
         Relationships: []
       }
+      order_book_data: {
+        Row: {
+          asks: Json
+          bids: Json
+          created_at: string
+          exchange: string
+          id: string
+          symbol: string
+          timestamp: string
+        }
+        Insert: {
+          asks: Json
+          bids: Json
+          created_at?: string
+          exchange: string
+          id?: string
+          symbol: string
+          timestamp: string
+        }
+        Update: {
+          asks?: Json
+          bids?: Json
+          created_at?: string
+          exchange?: string
+          id?: string
+          symbol?: string
+          timestamp?: string
+        }
+        Relationships: []
+      }
+      tick_data: {
+        Row: {
+          ask: number | null
+          bid: number | null
+          created_at: string
+          exchange: string
+          id: string
+          price: number
+          spread: number | null
+          symbol: string
+          timestamp: string
+          volume: number
+        }
+        Insert: {
+          ask?: number | null
+          bid?: number | null
+          created_at?: string
+          exchange: string
+          id?: string
+          price: number
+          spread?: number | null
+          symbol: string
+          timestamp: string
+          volume: number
+        }
+        Update: {
+          ask?: number | null
+          bid?: number | null
+          created_at?: string
+          exchange?: string
+          id?: string
+          price?: number
+          spread?: number | null
+          symbol?: string
+          timestamp?: string
+          volume?: number
+        }
+        Relationships: []
+      }
       trades: {
         Row: {
           amount: number
@@ -127,7 +196,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      upsert_market_data: {
+        Args: {
+          p_change_amount?: number
+          p_change_percent?: number
+          p_data_source?: string
+          p_market_cap?: number
+          p_price: number
+          p_symbol: string
+          p_volume?: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
