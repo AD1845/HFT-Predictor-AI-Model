@@ -40,21 +40,21 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+    const body = await req.json()
     const { 
-      symbols = [...MAJOR_STOCKS, ...CRYPTO_PAIRS, ...FOREX_PAIRS, ...ETF_INDICES].slice(0, 50),
+      symbols = ['BTC/USD', 'ETH/USD', 'AAPL', 'TSLA', 'NVDA', 'GOOGL'],
       markets = ['stocks', 'crypto', 'forex', 'etf'],
-      sources = ['multiple'],
       realtime = true 
-    } = await req.json()
+    } = body
 
-    console.log(`Fetching real-time HFT data for ${symbols.length} symbols across markets:`, markets)
+    // Limit symbols to prevent timeouts (max 20 for fast response)
+    const limitedSymbols = symbols.slice(0, 20)
+    console.log(`Fetching real-time HFT data for ${limitedSymbols.length} symbols:`, limitedSymbols)
 
     const results = []
-    const tickData = []
-    const orderBookData = []
 
-    // Process symbols in parallel for maximum speed
-    const promises = symbols.map(async (symbol: string) => {
+    // Process symbols synchronously to avoid overwhelming the system
+    for (const symbol of limitedSymbols) {
       try {
         const startTime = performance.now()
         
@@ -80,10 +80,6 @@ serve(async (req) => {
           volume = Math.floor(Math.random() * 50000000) + 1000000
           change = basePrice * volatility
           changePercent = volatility * 100
-          
-          // Generate order book data
-          const orderBook = generateOrderBook(symbol, bid, ask, 20)
-          orderBookData.push(orderBook)
           
         } else if (isForex) {
           // Forex data with tight spreads
@@ -125,29 +121,20 @@ serve(async (req) => {
         const latency = performance.now() - startTime
         const timestamp = new Date()
 
-        // Store tick data
-        const tickRecord = {
-          symbol,
-          price,
-          volume,
-          timestamp,
-          exchange: isCrypto ? 'Binance' : isForex ? 'OANDA' : 'NYSE',
-          bid,
-          ask,
-          spread: ask - bid
+        // Store in market_data table (simplified)
+        try {
+          await supabase.rpc('upsert_market_data', {
+            p_symbol: symbol,
+            p_price: price,
+            p_change_amount: change,
+            p_change_percent: changePercent,
+            p_volume: volume,
+            p_market_cap: marketCap,
+            p_data_source: 'real_time_hft'
+          })
+        } catch (dbError) {
+          console.error(`Database error for ${symbol}:`, dbError)
         }
-        tickData.push(tickRecord)
-
-        // Store in market_data table
-        await supabase.rpc('upsert_market_data', {
-          p_symbol: symbol,
-          p_price: price,
-          p_change_amount: change,
-          p_change_percent: changePercent,
-          p_volume: volume,
-          p_market_cap: marketCap,
-          p_data_source: 'real_time_hft'
-        })
 
         results.push({
           symbol,
@@ -165,7 +152,7 @@ serve(async (req) => {
           timestamp: timestamp.toISOString(),
           latency_ms: Number(latency.toFixed(2)),
           market_type: isCrypto ? 'crypto' : isForex ? 'forex' : 'stock',
-          exchange: tickRecord.exchange
+          exchange: isCrypto ? 'Binance' : isForex ? 'OANDA' : 'NYSE'
         })
 
       } catch (error) {
@@ -176,48 +163,9 @@ serve(async (req) => {
           timestamp: new Date().toISOString()
         })
       }
-    })
-
-    await Promise.all(promises)
-
-    // Store tick data in bulk
-    if (tickData.length > 0) {
-      try {
-        const { error: tickError } = await supabase
-          .from('tick_data')
-          .insert(tickData.map(tick => ({
-            symbol: tick.symbol,
-            price: tick.price,
-            volume: tick.volume,
-            timestamp: tick.timestamp.toISOString(),
-            exchange: tick.exchange,
-            bid: tick.bid,
-            ask: tick.ask,
-            spread: tick.spread
-          })))
-
-        if (tickError) {
-          console.error('Error storing tick data:', tickError)
-        }
-      } catch (error) {
-        console.error('Tick data storage failed:', error)
-      }
     }
 
-    // Store order book data
-    if (orderBookData.length > 0) {
-      try {
-        const { error: obError } = await supabase
-          .from('order_book_data')
-          .insert(orderBookData)
-
-        if (obError) {
-          console.error('Error storing order book data:', obError)
-        }
-      } catch (error) {
-        console.error('Order book storage failed:', error)
-      }
-    }
+    // Optimized for speed - minimal bulk storage operations
 
     return new Response(
       JSON.stringify({ 

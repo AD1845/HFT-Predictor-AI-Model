@@ -116,9 +116,9 @@ const SecureTradingForm: React.FC<SecureTradingFormProps> = ({ onSubmit }) => {
       }
 
       // Store trade in database (public access)
-      const { error } = await supabase
-        .from('user_trades')
-        .insert({
+        const { error } = await supabase
+          .from('trades')
+          .insert({
           user_id: crypto.randomUUID(), // Generate random ID for public access
           symbol: sanitizedSymbol,
           trade_type: tradeType,
