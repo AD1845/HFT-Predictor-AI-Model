@@ -14,7 +14,114 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      hft_signals: {
+        Row: {
+          confidence: number
+          created_at: string
+          id: string
+          metadata: Json | null
+          price: number
+          signal_type: string
+          strategy: string
+          symbol: string
+          volume: number | null
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          price: number
+          signal_type: string
+          strategy: string
+          symbol: string
+          volume?: number | null
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          price?: number
+          signal_type?: string
+          strategy?: string
+          symbol?: string
+          volume?: number | null
+        }
+        Relationships: []
+      }
+      market_data: {
+        Row: {
+          change_amount: number
+          change_percent: number
+          created_at: string
+          data_source: string
+          id: string
+          last_updated: string
+          market_cap: number | null
+          price: number
+          symbol: string
+          volume: number
+        }
+        Insert: {
+          change_amount?: number
+          change_percent?: number
+          created_at?: string
+          data_source?: string
+          id?: string
+          last_updated?: string
+          market_cap?: number | null
+          price: number
+          symbol: string
+          volume?: number
+        }
+        Update: {
+          change_amount?: number
+          change_percent?: number
+          created_at?: string
+          data_source?: string
+          id?: string
+          last_updated?: string
+          market_cap?: number | null
+          price?: number
+          symbol?: string
+          volume?: number
+        }
+        Relationships: []
+      }
+      trades: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          price: number
+          status: string
+          symbol: string
+          trade_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          price: number
+          status?: string
+          symbol: string
+          trade_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          price?: number
+          status?: string
+          symbol?: string
+          trade_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
