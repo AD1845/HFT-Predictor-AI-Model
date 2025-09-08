@@ -217,16 +217,52 @@ export const useHFTPredictor = (symbols: string[], updateInterval = 5000) => {
     try {
       setError(null);
       
-      // Fetch real-time data from our edge function
-      const { data: marketData, error: marketError } = await supabase.functions.invoke('fetch-market-data', {
+      // Fetch HFT predictions from our advanced inference engine
+      const { data: predictionData, error: predictionError } = await supabase.functions.invoke('hft-inference', {
+        body: { symbols, horizon: '5m' }
+      });
+
+      if (predictionError) throw predictionError;
+
+      if (predictionData?.success && predictionData?.data) {
+        const formattedPredictions = predictionData.data.map((item: any) => ({
+          symbol: item.symbol,
+          currentPrice: item.currentPrice,
+          predictedPrice: item.predictedPrice,
+          confidence: item.confidence,
+          direction: item.direction,
+          timeframe: item.timeframe,
+          volatility: item.volatility_daily || 0,
+          volume: item.volume || 0,
+          momentum: item.momentum_5m || 0,
+          rsi: item.rsi || 50,
+          macd: item.macd || 0,
+          bollinger: {
+            upper: item.bollinger_upper || 0,
+            middle: item.bollinger_middle || 0,
+            lower: item.bollinger_lower || 0
+          },
+          support: item.support || item.currentPrice * 0.95,
+          resistance: item.resistance || item.currentPrice * 1.05,
+          timestamp: item.timestamp
+        }));
+        
+        setPredictions(formattedPredictions);
+        setLoading(false);
+        return;
+      }
+
+      // Fallback to synthetic data generation if prediction service fails
+      const predictions: HFTPrediction[] = [];
+      
+      // Fetch basic market data as fallback
+      const { data: fallbackData, error: fallbackError } = await supabase.functions.invoke('real-time-hft-data', {
         body: { symbols }
       });
 
-      if (marketError) throw marketError;
-
-      const predictions: HFTPrediction[] = [];
+      if (fallbackError) throw fallbackError;
       
-      for (const data of marketData.data) {
+      for (const data of fallbackData?.data || []) {
         // Generate historical prices for technical analysis
         const historicalPrices = generateHistoricalPrices(data.price, 100);
         

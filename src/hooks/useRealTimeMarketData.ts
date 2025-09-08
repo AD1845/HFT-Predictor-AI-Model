@@ -12,7 +12,7 @@ export interface RealTimeMarketData {
   timestamp: string
 }
 
-export const useRealTimeMarketData = (symbols: string[], refreshInterval = 30000) => {
+export const useRealTimeMarketData = (symbols: string[], refreshInterval = 5000) => {
   const [data, setData] = useState<RealTimeMarketData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -21,30 +21,34 @@ export const useRealTimeMarketData = (symbols: string[], refreshInterval = 30000
     try {
       setError(null)
       
-      // First try to get cached data from database
+      // First try to get cached data from database (reduced cache time for more real-time updates)
       const { data: cachedData, error: dbError } = await supabase
         .from('market_data')
         .select('*')
         .in('symbol', symbols)
-        .eq('data_source', 'live_api')
+        .eq('data_source', 'real_time_hft')
         .order('last_updated', { ascending: false })
 
       if (dbError) {
         console.error('Database error:', dbError)
       }
 
-      // Check if we need fresh data (older than 30 seconds)
+      // Check if we need fresh data (older than 10 seconds for high-frequency updates)
       const needsFreshData = !cachedData || cachedData.length === 0 || 
         cachedData.some(item => {
           const lastUpdate = new Date(item.last_updated).getTime()
           const now = Date.now()
-          return now - lastUpdate > 30000 // 30 seconds
+          return now - lastUpdate > 10000 // 10 seconds for real-time accuracy
         })
 
       if (needsFreshData) {
-        // Fetch fresh data from enhanced real-time endpoint
+        // Fetch fresh data from enhanced real-time endpoint with global market coverage
         const { data: freshData, error: functionError } = await supabase.functions.invoke('real-time-hft-data', {
-          body: { symbols }
+          body: { 
+            symbols,
+            markets: ['stocks', 'crypto', 'forex', 'etf'],
+            realtime: true
+          }
         })
 
         if (functionError) {
