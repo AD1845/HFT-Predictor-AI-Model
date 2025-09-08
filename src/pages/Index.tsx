@@ -12,6 +12,7 @@ import OptimizedHFTDashboard from '../components/OptimizedHFTDashboard';
 import AITradingBot from '../components/AITradingBot';
 import PredictionPanel from '../components/PredictionPanel';
 import StrategyPanel from '../components/StrategyPanel';
+import AuthWrapper from '../components/AuthWrapper';
 import SecureTradingForm from '../components/SecureTradingForm';
 import NotificationSystem from '../components/NotificationSystem';
 import StrategyEngine from '../components/StrategyEngine';
@@ -99,7 +100,9 @@ const Index = () => {
         {/* Strategy and Trading Forms */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <StrategyPanel />
-          <SecureTradingForm onSubmit={handleTradeSubmit} />
+          <AuthWrapper>
+            <SecureTradingForm onSubmit={handleTradeSubmit} />
+          </AuthWrapper>
         </div>
       </div>
       

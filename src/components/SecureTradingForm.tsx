@@ -115,11 +115,24 @@ const SecureTradingForm: React.FC<SecureTradingFormProps> = ({ onSubmit }) => {
         }
       }
 
-      // Store trade in database (public access)
-        const { error } = await supabase
-          .from('trades')
-          .insert({
-          user_id: crypto.randomUUID(), // Generate random ID for public access
+      // Get current user from Supabase auth
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        toast({
+          title: 'Authentication Required',
+          description: 'You must be logged in to place trades. Please sign in first.',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Store trade in database with proper user authentication
+      const { error } = await supabase
+        .from('trades')
+        .insert({
+          user_id: user.id, // Use authenticated user's ID
           symbol: sanitizedSymbol,
           trade_type: tradeType,
           amount: numericAmount,
