@@ -24,6 +24,7 @@ export type Database = {
           signal_type: string
           strategy: string
           symbol: string
+          user_id: string | null
           volume: number | null
         }
         Insert: {
@@ -35,6 +36,7 @@ export type Database = {
           signal_type: string
           strategy: string
           symbol: string
+          user_id?: string | null
           volume?: number | null
         }
         Update: {
@@ -46,6 +48,7 @@ export type Database = {
           signal_type?: string
           strategy?: string
           symbol?: string
+          user_id?: string | null
           volume?: number | null
         }
         Relationships: []

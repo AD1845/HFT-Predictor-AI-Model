@@ -50,6 +50,27 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+    // Get the Authorization header for user authentication
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
+    // Verify the user token and get user ID
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    )
+    
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
     const body = await req.json()
     const { symbols = ['BTC/USD', 'ETH/USD', 'AAPL', 'TSLA'], horizon = '5m' } = body
 
@@ -99,7 +120,7 @@ serve(async (req) => {
         
         const processingTime = performance.now() - startTime
         
-        // Store prediction signal
+        // Store prediction signal with user association
         await supabase.from('hft_signals').upsert({
           symbol: marketItem.symbol,
           signal_type: prediction.direction,
@@ -107,6 +128,7 @@ serve(async (req) => {
           confidence: prediction.confidence,
           strategy: `${model.name}_${horizon}`,
           volume: marketItem.volume,
+          user_id: user.id, // Associate signal with authenticated user
           metadata: {
             predicted_price: prediction.predictedPrice,
             timeframe: horizon,
